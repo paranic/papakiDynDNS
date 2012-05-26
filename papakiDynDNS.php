@@ -15,7 +15,7 @@ include('dom/simple_html_dom.php');
 
 $config['host'] = 'quad';
 $config['domain'] = 'quake.gr';
-$config['new_ip_address'] = '127.0.0.1';
+$config['new_ip_address'] = file_get_contents('http://automation.whatismyip.com/n09230945.asp');
 $config['papaki_username'] = 'your_papaki_gr_username';
 $config['papaki_password'] = 'your_papaki_gr_password';
 
