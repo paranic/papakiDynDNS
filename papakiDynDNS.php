@@ -13,9 +13,9 @@ define('DEBUG', TRUE);
 
 include('dom/simple_html_dom.php');
 
-$config['host'] = 'quad';
-$config['domain'] = 'quake.gr';
-$config['new_ip_address'] = file_get_contents('http://automation.whatismyip.com/n09230945.asp');
+$config['host'] = 'your_host_www';
+$config['domain'] = 'your_papaki_domain';
+$config['new_ip_address'] = file_get_contents('http://icanhazip.com/');
 $config['papaki_username'] = 'your_papaki_gr_username';
 $config['papaki_password'] = 'your_papaki_gr_password';
 
