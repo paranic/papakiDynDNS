@@ -15,7 +15,7 @@ include('dom/simple_html_dom.php');
 
 $config['host'] = 'your_host_www';
 $config['domain'] = 'your_papaki_domain';
-$config['new_ip_address'] = file_get_contents('http://icanhazip.com/');
+$config['new_ip_address'] = trim(file_get_contents('http://icanhazip.com/'));
 $config['papaki_username'] = 'your_papaki_gr_username';
 $config['papaki_password'] = urlencode('your_papaki_gr_password');
 
