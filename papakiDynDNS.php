@@ -1,11 +1,11 @@
-<?
+<?php
 /*
  * papakiDynDNS.php
  * A script to update a specific dns record at papaki.gr free DNS Hosting service
  *
  *
  * @author: Παραστατίδης Νίκος <paranic@gmail.com>
- * @version: 1.0 (2012-05-25)
+ * @version: 2.0 (2019-06-10)
  */
 
 
@@ -21,7 +21,7 @@ $config['papaki_password'] = 'your_papaki_gr_password';
 
 // Do the login
 $ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, 'https://www.papaki.gr/cp2/login.aspx?username=' . $config['papaki_username'] . '&password=' . $config['papaki_password']);
+curl_setopt($ch, CURLOPT_URL, 'https://www.papaki.com/cp2/login.aspx?username=' . $config['papaki_username'] . '&password=' . $config['papaki_password']);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 curl_setopt($ch, CURLOPT_COOKIEFILE, 'cookieFile.txt');
 curl_setopt($ch, CURLOPT_COOKIEJAR, 'cookieFile.txt');
@@ -33,7 +33,7 @@ if ($response == 'false') die();
 // Fetch domain DNS records
 if (DEBUG) print_r("Fetching DNS records.\n");
 $ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, 'https://www.papaki.gr/cp2/manageDNS/?domain=' . $config['domain']);
+curl_setopt($ch, CURLOPT_URL, 'https://www.papaki.com/cp2/manageDNS/Default.aspx?domain=' . $config['domain']);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 curl_setopt($ch, CURLOPT_COOKIEFILE, 'cookieFile.txt');
 curl_setopt($ch, CURLOPT_COOKIEJAR, 'cookieFile.txt');
@@ -73,7 +73,7 @@ foreach($html->find('span') as $span)
 			// Fetch update form, so we can get VIEWSTATE and EVENTVALIDATION
 			if (DEBUG) print_r("Fetching update form.\n");
 			$c = curl_init();
-			curl_setopt($c, CURLOPT_URL, 'https://www.papaki.gr/cp2/manageDNS/manageDNS.aspx?did=' . $did . '&mode=' . $mode);
+			curl_setopt($c, CURLOPT_URL, 'https://www.papaki.com/cp2/manageDNS/manageDNS.aspx?did=' . $did . '&mode=' . $mode);
 			curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($c, CURLOPT_COOKIEFILE, 'cookieFile.txt');
 			curl_setopt($c, CURLOPT_COOKIEJAR, 'cookieFile.txt');
@@ -94,7 +94,7 @@ foreach($html->find('span') as $span)
 			$post_fields['txt_IP_A'] = $config['new_ip_address'];
 			$post_fields['lst_ttl_A'] = '3600';
 			$c = curl_init();
-			curl_setopt($c, CURLOPT_URL, 'https://www.papaki.gr/cp2/manageDNS/manageDNS.aspx?did=' . $did . '&mode=' . $mode);
+			curl_setopt($c, CURLOPT_URL, 'https://www.papaki.com/cp2/manageDNS/manageDNS.aspx?did=' . $did . '&mode=' . $mode);
 			curl_setopt($c, CURLOPT_POST, true);
 			curl_setopt($c, CURLOPT_POSTFIELDS, http_build_query($post_fields));
 			curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
