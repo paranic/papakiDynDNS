@@ -1,11 +1,11 @@
-<?
+<?php
 /*
  * papakiDynDNS.php
  * A script to update a specific dns record at papaki.gr free DNS Hosting service
  *
  *
  * @author: Παραστατίδης Νίκος <paranic@gmail.com>
- * @version: 1.0 (2012-05-25)
+ * @version: 2.0 (2019-06-10)
  */
 
 
@@ -15,13 +15,13 @@ include('dom/simple_html_dom.php');
 
 $config['host'] = 'your_host_www';
 $config['domain'] = 'your_papaki_domain';
-$config['new_ip_address'] = file_get_contents('http://icanhazip.com/');
+$config['new_ip_address'] = trim(file_get_contents('http://icanhazip.com/'));
 $config['papaki_username'] = 'your_papaki_gr_username';
 $config['papaki_password'] = 'your_papaki_gr_password';
 
 // Do the login
 $ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, 'https://www.papaki.gr/cp2/login.aspx?username=' . $config['papaki_username'] . '&password=' . $config['papaki_password']);
+curl_setopt($ch, CURLOPT_URL, 'https://www.papaki.com/cp2/login.aspx?username=' . $config['papaki_username'] . '&password=' . $config['papaki_password']);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 curl_setopt($ch, CURLOPT_COOKIEFILE, 'cookieFile.txt');
 curl_setopt($ch, CURLOPT_COOKIEJAR, 'cookieFile.txt');
@@ -33,7 +33,7 @@ if ($response == 'false') die();
 // Fetch domain DNS records
 if (DEBUG) print_r("Fetching DNS records.\n");
 $ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, 'https://www.papaki.gr/cp2/manageDNS/?domain=' . $config['domain']);
+curl_setopt($ch, CURLOPT_URL, 'https://www.papaki.com/cp2/manageDNS/Default.aspx?domain=' . $config['domain']);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 curl_setopt($ch, CURLOPT_COOKIEFILE, 'cookieFile.txt');
 curl_setopt($ch, CURLOPT_COOKIEJAR, 'cookieFile.txt');
@@ -57,56 +57,58 @@ foreach($html->find('span') as $span)
 
 			$current_ip = $html->find('span[id=rpttypes_ctl00_rptRecords_' . $rptRecord . '_lbl_content]');
 			if (DEBUG) print_r("Record found! " . $span->plaintext . " -> " . $current_ip[0]->plaintext . "\n");
-			if ($config['new_ip_address'] == $current_ip[0]->plaintext)
+			if (strcmp($config['new_ip_address'], $current_ip[0]->plaintext) == 0 )
 			{
 				if (DEBUG) print_r("No need to update, IP is the same as the one we are trying to update\n");
 				die();
 			}
+			else
+			{				
+				print_r("The record has to be updated!\n");
+			
+				$search_id = 'rpttypes_ctl00_rptRecords_' . $rptRecord . '_lnk_edit';
+				$edit_button = $html->find('a[id=' . $search_id . ']');
+				$did = $edit_button[0]->did;
+				$mode = $edit_button[0]->mode;
 
-			if (DEBUG) print_r("The record has to be updated.!\n");
+				// Fetch update form, so we can get VIEWSTATE and EVENTVALIDATION
+				if (DEBUG) print_r("Fetching update form.\n");
+				$c = curl_init();
+				curl_setopt($c, CURLOPT_URL, 'https://www.papaki.com/cp2/manageDNS/manageDNS.aspx?did=' . $did . '&mode=' . $mode);
+				curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
+				curl_setopt($c, CURLOPT_COOKIEFILE, 'cookieFile.txt');
+				curl_setopt($c, CURLOPT_COOKIEJAR, 'cookieFile.txt');
+				$response = curl_exec($c);
+				curl_close($c);
+				$update_html = new simple_html_dom();
+				$update_html->load($response);
+				$view_state = $update_html->find('input[id=__VIEWSTATE]');
+				$event_validation = $update_html->find('input[id=__EVENTVALIDATION]');
 
-			$search_id = 'rpttypes_ctl00_rptRecords_' . $rptRecord . '_lnk_edit';
-			$edit_button = $html->find('a[id=' . $search_id . ']');
-			$did = $edit_button[0]->did;
-			$mode = $edit_button[0]->mode;
+				// Do the post to update form
+				if (DEBUG) print_r("Posting new data.\n");
+				$post_fields = array();
+				$post_fields['__EVENTTARGET'] = 'btn_add';
+				$post_fields['__VIEWSTATE'] = $view_state[0]->value;
+				$post_fields['__EVENTVALIDATION'] = $event_validation[0]->value;
+				$post_fields['txt_Host_A'] = $config['host'];
+				$post_fields['txt_IP_A'] = $config['new_ip_address'];
+				$post_fields['lst_ttl_A'] = '3600';
+				$c = curl_init();
+				curl_setopt($c, CURLOPT_URL, 'https://www.papaki.com/cp2/manageDNS/manageDNS.aspx?did=' . $did . '&mode=' . $mode);
+				curl_setopt($c, CURLOPT_POST, true);
+				curl_setopt($c, CURLOPT_POSTFIELDS, http_build_query($post_fields));
+				curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
+				curl_setopt($c, CURLOPT_COOKIEFILE, 'cookieFile.txt');
+				curl_setopt($c, CURLOPT_COOKIEJAR, 'cookieFile.txt');
+				$response = curl_exec($c);
+				curl_close($c);
 
-			// Fetch update form, so we can get VIEWSTATE and EVENTVALIDATION
-			if (DEBUG) print_r("Fetching update form.\n");
-			$c = curl_init();
-			curl_setopt($c, CURLOPT_URL, 'https://www.papaki.gr/cp2/manageDNS/manageDNS.aspx?did=' . $did . '&mode=' . $mode);
-			curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($c, CURLOPT_COOKIEFILE, 'cookieFile.txt');
-			curl_setopt($c, CURLOPT_COOKIEJAR, 'cookieFile.txt');
-			$response = curl_exec($c);
-			curl_close($c);
-			$update_html = new simple_html_dom();
-			$update_html->load($response);
-			$view_state = $update_html->find('input[id=__VIEWSTATE]');
-			$event_validation = $update_html->find('input[id=__EVENTVALIDATION]');
-
-			// Do the post to update form
-			if (DEBUG) print_r("Posting new data.\n");
-			$post_fields = array();
-			$post_fields['__EVENTTARGET'] = 'btn_add';
-			$post_fields['__VIEWSTATE'] = $view_state[0]->value;
-			$post_fields['__EVENTVALIDATION'] = $event_validation[0]->value;
-			$post_fields['txt_Host_A'] = $config['host'];
-			$post_fields['txt_IP_A'] = $config['new_ip_address'];
-			$post_fields['lst_ttl_A'] = '3600';
-			$c = curl_init();
-			curl_setopt($c, CURLOPT_URL, 'https://www.papaki.gr/cp2/manageDNS/manageDNS.aspx?did=' . $did . '&mode=' . $mode);
-			curl_setopt($c, CURLOPT_POST, true);
-			curl_setopt($c, CURLOPT_POSTFIELDS, http_build_query($post_fields));
-			curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($c, CURLOPT_COOKIEFILE, 'cookieFile.txt');
-			curl_setopt($c, CURLOPT_COOKIEJAR, 'cookieFile.txt');
-			$response = curl_exec($c);
-			curl_close($c);
-
-			$record_updated = TRUE;
+				$record_updated = TRUE;
+				}
+			}
 		}
 	}
-}
 
 if ($record_updated == FALSE)
 {
